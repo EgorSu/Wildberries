@@ -138,8 +138,6 @@ func main() {
 func processMsg(in <-chan stan.Msg, data *Data, wg *sync.WaitGroup) error {
 
 	defer wg.Done()
-	defer fmt.Println("end go")
-
 	for {
 		var result map[string]interface{}
 		msg, ok := <-in
