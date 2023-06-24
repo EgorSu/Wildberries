@@ -151,7 +151,7 @@ func processMsg(in <-chan stan.Msg, data *Data, wg *sync.WaitGroup) error {
 		if err != nil {
 			return err
 		}
-		key, ok := result[idValue].(string) //из json достанем id, сами данные отсавим хранить в []bytes
+		key, ok := result[idValue].(string) //из json достанем id, сами данные отсавим хранить в []byte
 		if ok {
 			ok := data.set(key, byteValue)
 			if ok {
