@@ -101,7 +101,7 @@ func main() {
 		fmt.Printf("nats subscribe error: %v\v", err)
 		return
 	}
-	// для ускорения обработки данных из ch запустим обрабботку поступащих данных в горунтинах
+	// для ускорения обработки данных из ch запустим обработку поступащих данных в горунтинах
 	for i := 0; i < runtime.NumCPU()-1; i++ {
 		wg.Add(1)
 		go processMsg(ch, data, &wg)
