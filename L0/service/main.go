@@ -40,7 +40,7 @@ var upgrader = websocket.Upgrader{
 }
 
 type Data struct {
-	mu   sync.RWMutex //!!
+	mu   sync.RWMutex
 	data map[string][]byte
 }
 
