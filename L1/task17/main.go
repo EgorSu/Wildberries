@@ -19,7 +19,7 @@ func search(arr []int, slice, val int) int {
 }
 
 func main() {
-	a := []int{1, 3, 6, 9, 12, 43, 90} // random generate?
+	a := []int{1, 3, 6, 9, 12, 43, 90} 
 	fmt.Println(search(a, 0, 1))
 	fmt.Println(search(a, 0, 91))
 	fmt.Println(search(a, 0, 7))
