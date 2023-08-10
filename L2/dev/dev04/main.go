@@ -36,7 +36,3 @@ func (sw *setWords) get() *map[string][]string {
 	}
 	return &result
 }
-
-func main() {
-
-}

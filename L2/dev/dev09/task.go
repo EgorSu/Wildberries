@@ -44,26 +44,20 @@ func main() {
 
 func Download(nameFile, URL string, contin bool, size int64) error {
 	var format string
+	var firstByte int64
+	var file *os.File
 
 	client := &http.Client{}
-	resp, err := client.Head(URL) // получаем информацию о содержимом по URL
+	resp, err := client.Head(URL) 
 	if err != nil {
 		return err
 	}
-
-	if nameFile == "" {
-		nameFile = time.Now().Format(time.RFC3339)
-	}
-
 	sizeData := resp.ContentLength
-	sizeChan := (sizeData / size) + 1
+	sizeC := (sizeData / size) + 1
 
 	if val, ok := resp.Header["Content-Type"]; ok {
-		format = strings.Split(strings.TrimSuffix(strings.Fields(val[0])[0], ";"), "/")[1] // получаем формат файла
+		format = strings.Split(strings.TrimSuffix(strings.Fields(val[0])[0], ";"), "/")[1] 
 	}
-
-	var firstByte int64
-	var file *os.File
 
 	if contin {
 		file, err = os.OpenFile(nameFile, os.O_APPEND|os.O_WRONLY, 0600)
@@ -80,22 +74,22 @@ func Download(nameFile, URL string, contin bool, size int64) error {
 		defer file.Close()
 	}
 
-	chDoneRead := make(chan struct{})
-	chDoneWrite := make(chan struct{})
-	chData := make(chan []byte, sizeChan)
+	isRead := make(chan struct{})
+	isWrite := make(chan struct{})
+	chData := make(chan []byte, sizeC)
 	chErr := make(chan error)
 
 	go func() {
 
 		for {
 
-			Range := fmt.Sprintf("bytes=%d-%d", firstByte, firstByte+size) //Устанавливаем размер запрашиваемого файла
+			Range := fmt.Sprintf("bytes=%d-%d", firstByte, firstByte+size)
 
 			req, err := http.NewRequest("GET", URL, nil)
 			if err != nil {
 				chErr <- err
 				close(chErr)
-				chDoneRead <- struct{}{}
+				isRead <- struct{}{}
 				return
 			}
 
@@ -105,7 +99,7 @@ func Download(nameFile, URL string, contin bool, size int64) error {
 			if err != nil {
 				chErr <- err
 				close(chErr)
-				chDoneRead <- struct{}{}
+				isRead <- struct{}{}
 				return
 			}
 			defer resp.Body.Close()
@@ -114,7 +108,7 @@ func Download(nameFile, URL string, contin bool, size int64) error {
 			if err != nil {
 				chErr <- err
 				close(chErr)
-				chDoneRead <- struct{}{}
+				isRead <- struct{}{}
 				return
 			}
 
@@ -126,7 +120,7 @@ func Download(nameFile, URL string, contin bool, size int64) error {
 		}
 
 		close(chErr)
-		chDoneRead <- struct{}{}
+		isRead <- struct{}{}
 	}()
 
 	go func() {
@@ -135,7 +129,7 @@ func Download(nameFile, URL string, contin bool, size int64) error {
 			if err != nil {
 				chErr <- err
 				close(chErr)
-				close(chDoneRead)
+				close(isRead)
 				return
 			}
 			defer file.Close()
@@ -151,9 +145,9 @@ func Download(nameFile, URL string, contin bool, size int64) error {
 					log.Println(err)
 				}
 				writer.Flush()
-			case <-chDoneRead:
-				chDoneWrite <- struct{}{}
-				close(chDoneRead)
+			case <-isRead:
+				isWrite <- struct{}{}
+				close(isRead)
 			}
 		}
 
@@ -162,8 +156,8 @@ func Download(nameFile, URL string, contin bool, size int64) error {
 	select {
 	case err = <-chErr:
 		return err
-	case <-chDoneWrite:
-		close(chDoneWrite)
+	case <-isWrite:
+		close(isWrite)
 		return nil
 	}
 }
