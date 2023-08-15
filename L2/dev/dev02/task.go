@@ -8,8 +8,8 @@ import (
 )
 
 func unpackSimbol(s string) string {
-	simbol := []rune(s)[0]
-	num := []rune(s)[1]
+	simbol := []rune(s)[len([]rune(s))-2]
+	num := []rune(s)[len([]rune(s))-1]
 	val, err := strconv.Atoi(string(num))
 	if err != nil {
 		return ""
@@ -17,13 +17,11 @@ func unpackSimbol(s string) string {
 	res := strings.Repeat(string(simbol), val)
 	return res
 }
-
+func unpackEscape(s string) string {
+	return string([]rune(s)[1])
+}
 func Unpacking(str string) (string, error) {
 	correctReg, err := regexp.Compile(`[a-zA-Z]`)
-	if err != nil {
-		return "", err
-	}
-	unpackReg, err := regexp.Compile(`([a-zA-Z]\d)`)
 	if err != nil {
 		return "", err
 	}
@@ -31,12 +29,18 @@ func Unpacking(str string) (string, error) {
 	if !isCorrect {
 		return "", errors.New("string is not correct")
 	}
-	res := unpackReg.ReplaceAllStringFunc(str, unpackSimbol)
-	//fmt.Println(string(res))
-	return res, nil
-}
 
-func main() {
-	str1 := "a4bc2d5e"
-	Unpacking(str1)
+	unpackReg, err := regexp.Compile(`((\\\\)|[0-9a-zA-Z])\d`)
+	if err != nil {
+		return "", err
+	}
+
+	unpackEs, err := regexp.Compile(`\\\d`)
+	if err != nil {
+		return "", err
+	}
+
+	res := unpackReg.ReplaceAllStringFunc(str, unpackSimbol)
+	res = unpackEs.ReplaceAllStringFunc(res, unpackEscape)
+	return res, nil
 }
